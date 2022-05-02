@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Big Project</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+	<link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+	<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+	<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+	<link rel="manifest" href="/manifest.webmanifest">
+	<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+</head>
+	
+<body>
+<!-- 	This is the drawer object -->
+<header class="mdc-top-app-bar app-bar" id="menu">
+    <div class="mdc-top-app-bar__row" id="menu">
+      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start" id="menu">
+        <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button" id="menu">menu</button>
+        <span class="mdc-top-app-bar__title">Weather and Review's Find yous spot</span>
+      </section>
+    </div>
+  </header>
+  <aside class="mdc-drawer mdc-drawer--dismissible mdc-top-app-bar--fixed-adjust">
+    <div class="mdc-drawer__content" id="menuItems">
+      <div class="mdc-list">
+        <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page" id="currentLocation">
+          <span class="mdc-list-item__ripple"></span>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">inbox</i>
+          <span class="mdc-list-item__text" >Current Location</span>
+        </a>
+        <a class="mdc-list-item" href="#" aria-current="page" id="byCountry">
+          <span class="mdc-list-item__ripple"></span>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">drafts</i>
+          <span class="mdc-list-item__text">By Country</span>
+        </a>
+				<a class="mdc-list-item" href="#" aria-current="page" id="settings">
+          <span class="mdc-list-item__ripple"></span>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">drafts</i>
+          <span class="mdc-list-item__text">Settings</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+<!-- 	This is the drawer options -->
+  <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+    <main class="main-content" id="main-content">
+			<section id="dataPage" class="screen">
+				
+			</section>
+			<section id="homeDisplayPage" class="screen">
+				<button type="button" onclick="populateCurrentCountry();" id="popCurrCountryBtn">Populate</button>
+				<button typ="button" onclick="currentLocationDisplay();" id="currentLocationBtn">Get Location</button>
+				<button type="button" onclick="clearCountryArr();" id="lastLocationBtn">Clear Country</button>
+				<div id="currentMap"></div>
+			</section>
+			<section id="byCountryDisplay" class="screen">
+				<h1>Working Country Tags:</h1><br>
+				<p>USA</p>
+				<input type="text" id="countryInput">
+				<button type="button" onclick="populateByCountry();">Submit</button>
+				<button type="button" onclick="displayCountryResults();">Display Country</button>
+				<button type="button" onclick="clearCountryArr();">Clear Country</button>
+					<br>
+				<div id="countryMap"></div>
+			</section>
+			<section id="settingsDisplay" class="screen">
+				<p>Settings</p>
+				<p>Last Search</p>
+				<p>Last Location</p>
+				<div class="mdc-touch-target-wrapper">
+				  <button class="mdc-button mdc-button--touch" id=>
+				    <span class="mdc-button__ripple"></span>
+				    <span class="mdc-button__touch"></span>
+				    <span class="mdc-button__label">Testing</span>
+				  </button>
+				</div>
+				
+				<label for="basic-switch">off/on</label>
+				<p></p>
+			</section>
+    </main>
+  </div>
+<!-- 	----------------------------------------------------------------------------------------------------- -->
+
+  <script>
+		//Instanciation
+		const drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
+		const modeSwitch = new mdc.switchControl.MDCSwitch(document.querySelector(".mdc-switch"));
+		const buttonRipple = new mdc.ripple.MDCRipple(document.querySelector('.mdc-button'));
+		if('serviceWorker' in navigator) {
+	    navigator.serviceWorker.register('sw.js');
+	  };
+		const db = new Dexie("AppPreferences");
+		//End Instanciation
+		
+		//Variabes
+		let currMap, countryMap;
+		let currentLat, currentLng;
+		let currLatLng = {lat: 41.86975917757122, lng: -87.64962180263322};
+		let validCountry =[
+			"usa", "canada", "india", "australia", "brazil", "japan", "germany", "france", "uk", "united kingdom", "nethlands", "italy", "china", "chile", "colombia", "denmark", "mexico", "peru", "pakistan", "russia", "spain", "sweden", "ukrain"
+		];
+		const capitalCoords = [
+				{"state":"Alabama",			"lat":32.377716,	"lng":-86.300568},
+				{"state":"Alaska",			"lat":58.301598,	"lng":-134.420212},
+				{"state":"Arizona",			"lat":33.448143,		"lng":-112.096962},
+				{"state":"Arkansas",			"lat":34.746613,		"lng":-92.288986},
+				{"state":"California",		"lat":38.576668,	"lng":-121.493629},
+				{"state":"Colorado",			"lat":39.739227,	"lng":-104.984856},
+				{"state":"Connecticut",	"lat":41.764046,	"lng":-72.682198},
+				{"state":"Delaware",			"lat":39.157307,	"lng":-75.519722},
+				{"state":"Hawaii",				"lat":21.307442,	"lng":-157.857376},
+				{"state":"Florida",			"lat":30.438118,	"lng":-84.281296},
+				{"state":"Georgia",			"lat":33.749027,	"lng":-84.388229},
+				{"state":"Idaho",				"lat":43.617775,	"lng":-116.199722},
+				{"state":"Illinois",			"lat":39.798363,	"lng":-89.654961},
+				{"state":"Indiana",			"lat":39.768623,	"lng":-86.162643},
+				{"state":"Iowa",					"lat":41.591087,	"lng":-93.603729},
+				{"state":"Kansas",				"lat":39.048191,	"lng":-95.677956},
+				{"state":"Kentucky",			"lat":38.186722,	"lng":-84.875374},
+			 	{"state":"Louisiana",		"lat":30.457069,	"lng":-91.187393},
+				{"state":"Maine",				"lat":44.307167,	"lng":-69.781693},
+				{"state":"Maryland",			"lat":38.978764,	"lng":-76.490936},
+				{"state":"Massachusetts","lat":42.358162,	"lng":-71.063698},
+				{"state":"Michigan",			"lat":42.733635,	"lng":-84.555328},
+				{"state":"Minnesota",		"lat":44.955097,	"lng":-93.102211},
+				{"state":"Mississippi",	"lat":32.303848,	"lng":-90.182106},
+				{"state":"Missouri",			"lat":38.579201,	"lng":-92.172935},
+				{"state":"Montana",			"lat":46.585709,	"lng":-112.018417},
+				{"state":"Nebraska",			"lat":40.808075,	"lng":-96.699654},
+				{"state":"Nevada",				"lat":39.163914,	"lng":-119.766121},
+				{"state":"New Hampshire","lat":43.206898,	"lng":-71.537994},
+				{"state":"New Jersey",		"lat":40.220596,	"lng":-74.769913},
+				{"state":"New Mexico",		"lat":35.68224,		"lng":-105.939728},
+				{"state":"North Carolina","lat":35.78043,	"lng":-78.639099},
+			 	{"state":"North Dakota",	"lat":46.82085,		"lng":-100.783318},
+				{"state":"New York",			"lat":42.652843,	"lng":-73.757874},
+				{"state":"Ohio",					"lat":39.961346,	"lng":-82.999069},
+				{"state":"Oklahoma",			"lat":35.492207,	"lng":-97.503342},
+				{"state":"Oregon",				"lat":44.938461,	"lng":-123.030403},
+				{"state":"Pennsylvania",	"lat":40.264378,	"lng":-76.883598},
+				{"state":"Rhode Island",	"lat":41.830914,	"lng":-71.414963},
+				{"state":"South Carolina","lat":34.000343,	"lng":-81.033211},
+				{"state":"South Dakota",	"lat":44.367031,	"lng":-100.346405},
+				{"state":"Tennessee",		"lat":36.16581,		"lng":-86.784241},
+				{"state":"Texas",				"lat":30.27467,		"lng":-97.740349},
+				{"state":"Utah",					"lat":40.777477,	"lng":-111.888237},
+				{"state":"Vermont",			"lat":44.262436,	"lng":-72.580536},
+				{"state":"Virginia",			"lat":37.538857,	"lng":-77.43364},
+				{"state":"Washington",		"lat":47.035805,	"lng":-122.905014},
+				{"state":"West Virginia","lat":38.336246,	"lng":-81.612328},
+				{"state":"Wisconsin",		"lat":43.074684,	"lng":-89.384445},
+				{"state":"Wyoming",			"lat":41.140259,	"lng":-104.820236},
+		];
+		let cities = [];
+		let countryCirc = [];
+		let circArr = [];
+		//End Variables
+		
+		//API Keys
+		const weatherOptions = {
+	method: 'GET',
+	headers: {
+		'X-RapidAPI-Host': 'weatherapi-com.p.rapidapi.com',
+		'X-RapidAPI-Key': '779379fa46mshd8dc8addb1c1de4p14f054jsn802fd0cdbdbd'
+	}
+};
+		const options = {
+	method: 'GET',
+	headers: {
+		'X-RapidAPI-Host': 'vaccovid-coronavirus-vaccine-and-treatment-tracker.p.rapidapi.com',
+		'X-RapidAPI-Key': '779379fa46mshd8dc8addb1c1de4p14f054jsn802fd0cdbdbd'
+	}
+};
+		//API Keys End
+
+		
+
+		/**Event Listeners*/
+		document.querySelector("#menu").addEventListener("click", (e) => { 
+			console.log("Menu clicked");
+			drawer.open = true;
+		});
+
+		document.querySelector("#currentLocation").addEventListener("click", (e)=>{
+			console.log("Map clicked");
+			document.querySelectorAll(".screen").forEach((screen)=>{
+				screen.style.display = "none";
+			})
+			document.querySelector("#homeDisplayPage").style.display = "block";
+			console.log("homeDisplayPage Opened");
+			drawer.open = false;//Closes after press
+		});
+
+		document.querySelector("#byCountry").addEventListener("click", (e) => {
+			console.log("Country Clicked");
+			document.querySelectorAll(".screen").forEach((screen)=>{
+				screen.style.display = "none";
+			})
+			document.querySelector("#byCountryDisplay").style.display = "block";
+			drawer.open = false;
+		});
+
+		document.querySelector("#settings").addEventListener("click", (e) => {
+			console.log("Settings");
+			document.querySelectorAll(".screen").forEach((screen)=>{
+				screen.style.display = "none";
+			})
+			document.querySelector("#settingsDisplay").style.display = "block";
+			drawer.open = false;
+		});
+
+		// document.querySelector(".mdc-switch").addEventListener("click", (e) => {
+		// 	console.log("Switched");
+		// 	let switchMode = modeSwitch.selected ? "dark" : "light";
+		// 	setMode(switchMode);
+		// });
+
+		document.querySelector(".mdc-switch").addEventListener("click", (e) => {
+				// console.log(modeSwitch.selected);
+				if(modeSwitch.selected){
+					document.querySelector("body").className = "darkMode";
+					db.settings.put({name:"mode", value:"darkMode"});
+				}else{
+					document.querySelector("body").className = "lightMode";
+					db.settings.put({name:"mode", value:"lightMode"});
+				}
+			});
+		/**End Event Listener**/
+
+	/**Dexie Caching**/		
+	db.version(1).stores({
+		settings: 'name',	
+	});
+
+	db.settings.where("name").equals("mode").toArray((arr) => {
+			console.log(arr)
+			if(arr.length == 0){
+				db.settings.add({name: "mode", value: "lightMode", font:"thisFont"});
+			}else{
+				let mode = arr[0]["value"];
+				document.querySelector("body").className = mode;
+				console.log(mode);
+				if(mode == "lightMode"){
+					modeSwitch.selected = false;
+					console.log(mode);
+				}else{
+					modeSwitch.selected = true;
+					console.log(mode);
+				}			
+			}
+		});
+	
+	//Caching
+		
+	/**Dexie Caching End**/
+	//Functions
+
+		
+			
+		
+		function initMap() {
+			console.log("initMap");
+			currMap = new google.maps.Map(document.getElementById("currentMap"), {
+				center: currLatLng,
+				zoom: 6,
+			});//41.86975917757122, -87.64962180263322
+
+			countryMap = new google.maps.Map(document.getElementById("countryMap"),{
+				center: { lat: 41.86975917757122, lng: -87.64962180263322 },
+				zoom: 4,
+			});
+		}
+
+
+
+		
+		function currentLocationDisplay(){
+			const geoCoder = new google.maps.Geocoder();
+			let currLat, currLng, popObj;
+			let colorChoice;
+			//For Loop to get through loop and find city
+			if('geolocation' in navigator){
+				navigator.geolocation.getCurrentPosition((pos)=>{
+					const currLat = pos.coords.latitude;
+					const currLng = pos.coords.longitude;
+					currLatLng = {lat: currLat, lng: currLng};
+					
+					geoCoder.geocode({location: currLatLng})
+					.then((response) => {
+						const state = response["results"][9]["address_components"][2]["long_name"];
+						console.log(response);
+						cities.forEach((arr) => {
+							if(arr.city == state){
+								console.log("State Match");
+								console.log(arr);
+								const circle = new google.maps.Circle({
+									strokeColor: arr.tempColor,
+									strokeOpacity: 0.8,
+									strokeWeight: 2,
+									fillColor: arr.tempColor,
+									fillOpacity: 0.35,
+									map: currMap,
+									center: {lat: currLat, lng: currLng},
+									radius: arr.caseNumbers/3,
+								});			
+								circArr.push(circle);
+							}
+						});
+					}).catch((e) => window.alert("Geocoder failed due to: " + e));
+				});
+			}else{
+				console.log("GeoLocation Unavaibled");
+			}
+		}
+
+
+		
+		function getCircColor(i){
+				let tmp = cities[i].temp;
+				if(tmp >= 87)
+					cities[i].tempColor = "#F9F871";
+				else if(tmp >= 80)
+					cities[i].tempColor = "#FF9671";
+				else if(tmp >= 65)
+					cities[i].tempColor = "#FF6F91";
+				else
+					cities[i].tempColor = "#845EC2";
+		}
+		
+		function populateCurrentCountry(){
+			let count = 0;
+			fetch('https://vaccovid-coronavirus-vaccine-and-treatment-tracker.p.rapidapi.com/api/api-covid-data/reports/usa', options)
+					.then(response => response.json())
+					.then(response => {
+						response.forEach((city)=>{
+							tempCity ={"city":city.province, "caseNumbers":city.confirmed, "temp":0, "tempColor":null};
+							cities.push(tempCity);
+							weather(city.province, count);
+							count++;
+						});
+						console.log(cities);
+					}).catch(err => console.error(err));
+		}
+
+		
+	//Checks if country is in CovidApi
+		function validInput(country){
+		//Convert lower case
+			var verified = false;
+			validCountry.forEach((loc) => {
+				if(loc == country){ 
+						console.log("Country matched: " + loc);
+						verified = true;
+					}
+				});
+			return verified;
+	}
+
+		
+		function populateByCountry(){
+			let inputCountry = document.querySelector("#countryInput").value;//Captures country input
+			let covidResponse, caseNumbers, temp;
+			let city;
+			let count = 0;
+			
+			if(validInput(inputCountry) == false){
+				console.log("Invalid Country");////Add some type of pop up window to handle incorrect entries
+			}else{
+				fetch('https://vaccovid-coronavirus-vaccine-and-treatment-tracker.p.rapidapi.com/api/api-covid-data/reports/'+inputCountry, options)
+					.then(response => response.json())
+					.then(response => {//Start CovidAPI**
+						response.forEach((city)=>{
+							tempCity ={"city":city.province, "caseNumbers":city.confirmed, "temp":0, "tempColor":null};
+							cities.push(tempCity);
+							weather(city.province, count);
+							count++;
+						});//End of CovidApi
+						console.log(cities);
+					}).catch(err => console.error(err));//End of CovidAPI
+				}
+	}
+
+		function weather(inputCity, i){
+		console.log("Entered Weather");
+				fetch('https://weatherapi-com.p.rapidapi.com/current.json?q='+inputCity, weatherOptions)
+	.then(response => response.json())
+	.then(response => {
+			cities[i].temp = response.current.feelslike_f;
+			getCircColor(i);
+		})
+	.catch(err => console.error(err));
+	}
+	
+	/**----Country Function----**/
+		function displayCountryResults(){
+			cities.forEach((state) =>{
+				capitalCoords.forEach((cap) => {
+					if(state.city == cap.state){
+						//append lat lng to cities
+						state.lat = cap.lat;
+						state.lng = cap.lng;
+					}
+				})
+			});
+			setTimeout(()=>{
+				plotCountryCirc();
+			}, 2500);
+			// plotCountryCirc();
+	}
+
+		function plotCountryCirc(){
+			console.log("Entered Country Circ");
+			cities.forEach((state) => {
+				const circ = new google.maps.Circle({
+					strokeColor: state.tempColor,
+					strokeOpacity: 1,
+					strokeWeight: 5, 
+					fillColor: state.tempColor,
+					fillOpacity: 0.50,
+					map: countryMap,
+					center: {lat:state.lat, lng:state.lng},
+					radius: state.caseNumbers/3,
+				});
+				circArr.push(circ);
+				if(state.tempColor == null)
+					console.log("Null State: " + state.city);
+			});
+	}
+
+	function clearCountryArr(){
+		circArr.forEach((circle) => {
+			circle.setMap(null);
+		});
+		circArr = [];
+		cities = [];
+	}
+	
+	/**----End Country Function----**/
+	// End Function
+
+	</script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCIwUWbMsy-neU5UMDWQqol8n6xu6uK3Hg&callback=initMap&v=weekly" 
+				async></script>
+		
+</body>
+
+</html>

@@ -1,0 +1,44 @@
+
+#currentMap{
+	height:100%;
+	width: 100%;	
+}
+
+#countryMap{
+	height:800px;
+	width: 100%;
+}
+
+#homeDisplayPage{
+	width: 100%;
+	height: 800px;
+}
+
+#main-content{
+	height: 100%;
+	width: 100%;
+}
+.mdc-list{
+	background: white;
+	color:black;
+}
+.screen{
+	display: none;
+}
+body{
+	margin: 0px;
+}
+
+main{
+	margin: 8px;
+}
+
+.darkMode{
+	background: RGB(22,22,24);
+	color: white;
+}
+
+.lightMode{
+	background: white;
+	color: black;
+}
