@@ -29,7 +29,12 @@
   <aside class="mdc-drawer mdc-drawer--dismissible mdc-top-app-bar--fixed-adjust">
     <div class="mdc-drawer__content" id="menuItems">
       <div class="mdc-list">
-				 <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page" id="dataGraph">
+				<a class="mdc-list-item" href="#" aria-current="page" id="stateStats">
+          <span class="mdc-list-item__ripple"></span>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">location_on</i>
+          <span class="mdc-list-item__text">State Stats</span>
+        </a>
+				<a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page" id="dataGraph">
           <span class="mdc-list-item__ripple"></span>
           <i class="material-icons mdc-list-item__graphic" aria-hidden="true">location_on</i>
           <span class="mdc-list-item__text" >Data Representation</span>
@@ -56,11 +61,20 @@
 <!-- 	This is the drawer options -->
   <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
     <main class="main-content" id="main-content">
+			<section id="searchByStateDisplay" class="screen">
+				<h1>Search by state</h1>
+				<p>Populate Country First</p>
+				<p>Proper Capitalization</p>
+				<input type="text" id="stateInput">
+				<button type="button" onclick="populateCurrentCountry();" id="popCurrCountryBtn">Populate</button>
+				<button type="button" onclick="displayStateStats();" id="stateStatBtn">Display</button>
+			</section>
 			<section id="dataGraphPageDisplay" class="screen">
 				<h1>Populate Country Tag</h1><br>
 				<p>USA</p><br>
 				<button type="button" onclick="populateCurrentCountry();" id="popCurrCountryBtn">Populate</button>
 				<button type="button" onclick="displayGraph();" id="popDisplayGraphBtn">Display Graph</button>
+				<button type="button" onclick="clearCountryArr();">Clear Country</button>
 				<div id="pieChart" style="width:400px; height:400px;"></div>
 			</section>
 			<section id="homeDisplayPage" class="screen">
@@ -255,7 +269,15 @@
 			document.querySelector("#dataGraphPageDisplay").style.display = "block";
 			drawer.open = false;
 		});
-		
+
+		document.querySelector("#stateStats").addEventListener("click", (e) =>{
+			console.log("StateStats");
+			document.querySelectorAll(".screen").forEach((screen) => {
+				screen.style.display = "none";
+			});
+			document.querySelector("#searchByStateDisplay").style.display = "block";
+			drawer.open = false;
+		});
 		// document.querySelector(".mdc-switch").addEventListener("click", (e) => {
 		// 	console.log("Switched");
 		// 	let switchMode = modeSwitch.selected ? "dark" : "light";
@@ -302,7 +324,15 @@
 	/**Dexie Caching End**/
 	//Functions
 
-		
+		function displayStateStats(){
+			let stateInput = document.querySelector("#stateInput").value;
+			cities.forEach((e) => {
+				if(stateInput == e.city){
+					let txt = "State: " + stateInput + "		Cases: " + e.caseNumbers;
+					document.body.append(txt);
+				}
+			});
+		}
 			
 		
 		function initMap() {
