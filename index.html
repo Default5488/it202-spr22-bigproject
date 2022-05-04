@@ -9,7 +9,7 @@
 	<link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
 	<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-	
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>	
 	<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
 	<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
 	<link rel="manifest" href="/manifest.webmanifest">
@@ -29,19 +29,24 @@
   <aside class="mdc-drawer mdc-drawer--dismissible mdc-top-app-bar--fixed-adjust">
     <div class="mdc-drawer__content" id="menuItems">
       <div class="mdc-list">
+				 <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page" id="dataGraph">
+          <span class="mdc-list-item__ripple"></span>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">location_on</i>
+          <span class="mdc-list-item__text" >Data Representation</span>
+        </a>
         <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page" id="currentLocation">
           <span class="mdc-list-item__ripple"></span>
-          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">inbox</i>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">location_on</i>
           <span class="mdc-list-item__text" >Current Location</span>
         </a>
         <a class="mdc-list-item" href="#" aria-current="page" id="byCountry">
           <span class="mdc-list-item__ripple"></span>
-          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">drafts</i>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">location_on</i>
           <span class="mdc-list-item__text">By Country</span>
         </a>
 				<a class="mdc-list-item" href="#" aria-current="page" id="settings">
           <span class="mdc-list-item__ripple"></span>
-          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">drafts</i>
+          <i class="material-icons mdc-list-item__graphic" aria-hidden="true">settings</i>
           <span class="mdc-list-item__text">Settings</span>
         </a>
       </div>
@@ -51,8 +56,12 @@
 <!-- 	This is the drawer options -->
   <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
     <main class="main-content" id="main-content">
-			<section id="dataPage" class="screen">
-				
+			<section id="dataGraphPageDisplay" class="screen">
+				<h1>Populate Country Tag</h1><br>
+				<p>USA</p><br>
+				<button type="button" onclick="populateCurrentCountry();" id="popCurrCountryBtn">Populate</button>
+				<button type="button" onclick="displayGraph();" id="popDisplayGraphBtn">Display Graph</button>
+				<div id="pieChart" style="width:400px; height:400px;"></div>
 			</section>
 			<section id="homeDisplayPage" class="screen">
 				<button type="button" onclick="populateCurrentCountry();" id="popCurrCountryBtn">Populate</button>
@@ -72,6 +81,7 @@
 			</section>
 			<section id="settingsDisplay" class="screen">
 				<p>Settings</p>
+				<p>Light/Dark Toggle</p>
 				<p>Last Search</p>
 				<p>Last Location</p>
 				<div class="mdc-touch-target-wrapper">
@@ -81,7 +91,25 @@
 				    <span class="mdc-button__label">Testing</span>
 				  </button>
 				</div>
-				
+				<button id="basic-switch" class="mdc-switch mdc-switch--unselected" type="button" role="switch" aria-checked="false" id="mode">
+				  <div class="mdc-switch__track"></div>
+				  <div class="mdc-switch__handle-track">
+				    <div class="mdc-switch__handle">
+				      <div class="mdc-switch__shadow">
+				        <div class="mdc-elevation-overlay"></div>
+				      </div>
+				      <div class="mdc-switch__ripple"></div>
+				      <div class="mdc-switch__icons">
+				        <svg class="mdc-switch__icon mdc-switch__icon--on" viewBox="0 0 24 24">
+				          <path d="M19.69,5.23L8.96,15.96l-4.23-4.23L2.96,13.5l6,6L21.46,7L19.69,5.23z" />
+				        </svg>
+				        <svg class="mdc-switch__icon mdc-switch__icon--off" viewBox="0 0 24 24">
+				          <path d="M20 13H4v-2h16v2z" />
+				        </svg>
+				      </div>
+				    </div>
+				  </div>
+				</button>
 				<label for="basic-switch">off/on</label>
 				<p></p>
 			</section>
@@ -91,6 +119,7 @@
 
   <script>
 		//Instanciation
+		
 		const drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
 		const modeSwitch = new mdc.switchControl.MDCSwitch(document.querySelector(".mdc-switch"));
 		const buttonRipple = new mdc.ripple.MDCRipple(document.querySelector('.mdc-button'));
@@ -162,6 +191,7 @@
 		let cities = [];
 		let countryCirc = [];
 		let circArr = [];
+		
 		//End Variables
 		
 		//API Keys
@@ -217,6 +247,15 @@
 			drawer.open = false;
 		});
 
+		document.querySelector("#dataGraph").addEventListener("click", (e) =>{
+			console.log("dataGraph");
+			document.querySelectorAll(".screen").forEach((screen) => {
+				screen.style.display = "none";
+			});
+			document.querySelector("#dataGraphPageDisplay").style.display = "block";
+			drawer.open = false;
+		});
+		
 		// document.querySelector(".mdc-switch").addEventListener("click", (e) => {
 		// 	console.log("Switched");
 		// 	let switchMode = modeSwitch.selected ? "dark" : "light";
@@ -280,7 +319,28 @@
 		}
 
 
+		function displayGraph(){
+			google.charts.load('current', {'packages':['corechart']});
+			drawPieChart();
+			google.charts.setOnLoadCallback(drawPieChart);
+		}
+		
+		function drawPieChart(){
+			let data = new google.visualization.DataTable();
 
+			data.addColumn('string', 'city');
+			data.addColumn('number','caseNumbers');
+
+			cities.forEach((e) => {
+				data.addRow([e.city, e.caseNumbers]);
+			});
+
+			let pieChart = new google.visualization.PieChart(document.querySelector("#pieChart"));
+			let options = {
+				"title":"Case Representation",
+			};
+			pieChart.draw(data, options);
+		}
 		
 		function currentLocationDisplay(){
 			const geoCoder = new google.maps.Geocoder();
@@ -418,6 +478,7 @@
 
 		function plotCountryCirc(){
 			console.log("Entered Country Circ");
+			
 			cities.forEach((state) => {
 				const circ = new google.maps.Circle({
 					strokeColor: state.tempColor,
